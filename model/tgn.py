@@ -219,6 +219,11 @@ class TGN(torch.nn.Module):
     return pos_score.sigmoid(), neg_score.sigmoid()
 
   def update_memory(self, nodes, messages):
+    """
+    1. Agrega los mensajes pertenecientes a los mismos nodos.
+    2. Calcula los mensajes únicos de cada nodo.
+    3. Actualiza la memoria con los mensajes agregados y calculados.
+    """
     # Aggregate messages for the same nodes
     unique_nodes, unique_messages, unique_timestamps = \
       self.message_aggregator.aggregate(
@@ -233,6 +238,12 @@ class TGN(torch.nn.Module):
                                       timestamps=unique_timestamps)
 
   def get_updated_memory(self, nodes, messages):
+    """
+    1. Agrega los mensajes pertenecientes a los mismos nodos.
+    2. Calcula los mensajes únicos de cada nodo.
+    3. Actualiza la memoria con los mensajes agregados y calculados.
+    4. Devuelve la memoria actualizada y los tiempos de la última actualización.
+    """
     # Aggregate messages for the same nodes
     unique_nodes, unique_messages, unique_timestamps = \
       self.message_aggregator.aggregate(

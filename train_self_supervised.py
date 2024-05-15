@@ -10,7 +10,7 @@ from pathlib import Path
 
 from evaluation.evaluation import eval_edge_prediction
 from model.tgn import TGN
-from utils.utils import EarlyStopMonitor, RandEdgeSampler, get_neighbor_finder
+from utils.utils import EarlyStopMonitor, RandEdgeSampler, RandEdgeSampler_adversarial, get_neighbor_finder
 from utils.data_processing import get_data, compute_time_statistics
 
 torch.manual_seed(0)
@@ -63,6 +63,7 @@ parser.add_argument('--use_source_embedding_in_message', action='store_true',
 parser.add_argument('--dyrep', action='store_true',
                     help='Whether to run the dyrep model')
 
+parser.add_argument('--neg_sample', type=str, default='rnd', help='Strategy for the edge negative sampling.')
 
 try:
   args = parser.parse_args()
@@ -85,6 +86,7 @@ TIME_DIM = args.time_dim
 USE_MEMORY = args.use_memory
 MESSAGE_DIM = args.message_dim
 MEMORY_DIM = args.memory_dim
+NEG_SAMPLE = args.neg_sample
 
 Path("./saved_models/").mkdir(parents=True, exist_ok=True)
 Path("./saved_checkpoints/").mkdir(parents=True, exist_ok=True)
@@ -122,14 +124,24 @@ full_ngh_finder = get_neighbor_finder(full_data, args.uniform)
 # Initialize negative samplers. Set seeds for validation and testing so negatives are the same
 # across different runs
 # NB: in the inductive setting, negatives are sampled only amongst other new nodes
+#if NEG_SAMPLE == 'rnd':
 train_rand_sampler = RandEdgeSampler(train_data.sources, train_data.destinations)
 val_rand_sampler = RandEdgeSampler(full_data.sources, full_data.destinations, seed=0)
 nn_val_rand_sampler = RandEdgeSampler(new_node_val_data.sources, new_node_val_data.destinations,
-                                      seed=1)
+                                        seed=1)
 test_rand_sampler = RandEdgeSampler(full_data.sources, full_data.destinations, seed=2)
 nn_test_rand_sampler = RandEdgeSampler(new_node_test_data.sources,
-                                       new_node_test_data.destinations,
-                                       seed=3)
+                                        new_node_test_data.destinations,
+                                        seed=3)
+# else:
+#   train_rand_sampler = RandEdgeSampler_adversarial(train_data.sources, train_data.destinations, train_data.timestamps, NEG_SAMPLE)
+#   val_rand_sampler = RandEdgeSampler_adversarial(full_data.sources, full_data.destinations, seed=0)
+#   nn_val_rand_sampler = RandEdgeSampler_adversarial(new_node_val_data.sources, new_node_val_data.destinations,
+#                                         seed=1)
+#   test_rand_sampler = RandEdgeSampler_adversarial(full_data.sources, full_data.destinations, seed=2)
+#   nn_test_rand_sampler = RandEdgeSampler_adversarial(new_node_test_data.sources,
+#                                         new_node_test_data.destinations,
+#                                         seed=3)
 
 # Set device
 device_string = 'cuda:{}'.format(GPU) if torch.cuda.is_available() else 'cpu'

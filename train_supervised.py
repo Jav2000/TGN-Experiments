@@ -167,7 +167,7 @@ for i in range(args.n_runs):
   logger.info('Start training node classification task')
 
   decoder = MLP(node_features.shape[1], drop=DROP_OUT)
-  decoder_optimizer = torch.optim.Adam(decoder.parameters(), lr=args.lr)
+  decoder_optimizer = torch.optim.Adam(decoder.parameters(), lr=LEARNING_RATE)
   decoder = decoder.to(device)
   decoder_loss_criterion = torch.nn.BCELoss()
 
