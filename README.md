@@ -1,27 +1,14 @@
-# TGN: Temporal Graph Networks [[arXiv](https://arxiv.org/abs/2006.10637), [YouTube](https://www.youtube.com/watch?v=W1GvX2ZcUmY), [Blog Post](https://towardsdatascience.com/temporal-graph-networks-ab8f327f2efe)] 
+# Experimentos con Temporal Graph Networks
 
-Dynamic Graph             |  TGN	
-:-------------------------:|:-------------------------:	
-![](figures/dynamic_graph.png)  |  ![](figures/tgn.png)	
+## Introducción
 
+Partiendo del artículo [Temporal Graph Networks for Deep Learning on Dynamic Graphs](https://arxiv.org/abs/2006.10637) y del repositorio https://github.com/twitterresearch/tgn, la propuesta consiste en una evaluación experimental de las Temporal Graph
+Networks definidas en dicho artículo, analizando las líneas futuras propuestas y valorando
+los resultados obtenidos.
 
+## Ejecución de los experimentos
 
-
-## Introduction
-
-Despite the plethora of different models for deep learning on graphs, few approaches have been proposed thus far for dealing with graphs that present some sort of dynamic nature (e.g. evolving features or connectivity over time).
- 
-In this paper, we present Temporal Graph Networks (TGNs), a generic, efficient framework for deep learning on dynamic graphs represented as sequences of timed events. Thanks to a novel combination of memory modules and graph-based operators, TGNs are able to significantly outperform previous approaches being at the same time more computationally efficient. 
-
-We furthermore show that several previous models for learning on dynamic graphs can be cast as specific instances of our framework. We perform a detailed ablation study of different components of our framework and devise the best configuration that achieves state-of-the-art performance on several transductive and inductive prediction tasks for dynamic graphs.
-
-
-#### Paper link: [Temporal Graph Networks for Deep Learning on Dynamic Graphs](https://arxiv.org/abs/2006.10637)
-
-
-## Running the experiments
-
-### Requirements
+### Requerimientos
 
 Dependencies (with python >= 3.7):
 
@@ -31,81 +18,78 @@ torch==1.6.0
 scikit_learn==0.23.1
 ```
 
-### Dataset and Preprocessing
+### Conjuntos de datos y pre-procesado
 
-#### Download the public data
-Download the sample datasets (eg. wikipedia and reddit) from
-[here](http://snap.stanford.edu/jodie/) and store their csv files in a folder named
-```data/```.
+#### Conjuntos de datos de TGN
 
-#### Preprocess the data
-We use the dense `npy` format to save the features in binary format. If edge features or nodes 
-features are absent, they will be replaced by a vector of zeros. 
+##### Descargar los datos
+Se pueden descargar los conjuntos de datos de wikipedia y reddit desde [aquí](http://snap.stanford.edu/jodie/) y se deben almacenar en las carpetas
+```data/tgn_wikipedia``` y ```data/tgn_reddit``` respectivamente.
+
+#### Pre-procesamiento de los datos
+Se emplean archivos .npy para guardar los datos creados. Si las características de los nodos o aristas están vacías, se rellenarán con 0's.
 ```{bash}
-python utils/preprocess_data.py --data wikipedia --bipartite
-python utils/preprocess_data.py --data reddit --bipartite
+python3 utils/tgn_preprocess_data.py --data wikipedia --bipartite
+python3 utils/tgn_preprocess_data.py --data reddit --bipartite
 ```
 
+### Entrenamiento del modelo
 
-
-### Model Training
-
-Self-supervised learning using the link prediction task:
+Para la predicción de enlaces:
 ```{bash}
 # TGN-attn: Supervised learning on the wikipedia dataset
-python train_self_supervised.py --use_memory --prefix tgn-attn --n_runs 10
+python3 tgn_link_prediction.py --use_memory --prefix tgn-attn --n_runs 10
 
 # TGN-attn-reddit: Supervised learning on the reddit dataset
-python train_self_supervised.py -d reddit --use_memory --prefix tgn-attn-reddit --n_runs 10
+python tgn_link_prediction.py -d reddit --use_memory --prefix tgn-attn-reddit --n_runs 10
 ```
 
-Supervised learning on dynamic node classification (this requires a trained model from 
-the self-supervised task, by eg. running the commands above):
+Para la clasificación de nodos(se requiere el modelo entrenado en la tarea de predicción de enlaces):
 ```{bash}
 # TGN-attn: self-supervised learning on the wikipedia dataset
-python train_supervised.py --use_memory --prefix tgn-attn --n_runs 10
+python3 tgn_node_classification.py --use_memory --prefix tgn-attn --n_runs 10
 
 # TGN-attn-reddit: self-supervised learning on the reddit dataset
-python train_supervised.py -d reddit --use_memory --prefix tgn-attn-reddit --n_runs 10
+python3 tgn_node_classification.py -d reddit --use_memory --prefix tgn-attn-reddit --n_runs 10
 ```
 
-### Baselines
+### JODIE y DyRep
 
 ```{bash}
-### Wikipedia Self-supervised
+### Predicción de enlaces en Wikipedia
 
 # Jodie
-python train_self_supervised.py --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn --n_runs 10
+python3 tgn_link_prediction.py --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn --n_runs 10
 
 # DyRep
-python train_self_supervised.py --use_memory --memory_updater rnn --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn --n_runs 10
+python3 tgn_link_prediction.py --use_memory --memory_updater rnn --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn --n_runs 10
 
 
-### Reddit Self-supervised
+### Predicción de enlaces en Reddit
 
 # Jodie
-python train_self_supervised.py -d reddit --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn_reddit --n_runs 10
+python3 tgn_link_prediction.py -d reddit --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn_reddit --n_runs 10
 
 # DyRep
-python train_self_supervised.py -d reddit --use_memory --memory_updater rnn --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn_reddit --n_runs 10
+python3 tgn_link_prediction.py -d reddit --use_memory --memory_updater rnn --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn_reddit --n_runs 10
 
 
-### Wikipedia Supervised
+### Clasificación de nodos en Wikipedia
 
 # Jodie
-python train_supervised.py --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn --n_runs 10
+python3 tgn_node_classification.py --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn --n_runs 10
 
 # DyRep
-python train_supervised.py --use_memory --memory_updater rnn --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn --n_runs 10
+python3 tgn_node_classification.py --use_memory --memory_updater rnn --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn --n_runs 10
 
 
-### Reddit Supervised
+### Clasificación de nodos en Reddit
 
 # Jodie
-python train_supervised.py -d reddit --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn_reddit --n_runs 10
+python3 tgn_node_classification.py -d reddit --use_memory --memory_updater rnn --embedding_module time --prefix jodie_rnn_reddit --n_runs 10
 
 # DyRep
-python train_supervised.py -d reddit --use_memory --memory_updater rnn  --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn_reddit --n_runs 10
+python3 tgn_node_classification.py -d reddit --use_memory --memory_updater rnn  --dyrep --use_destination_embedding_in_message --prefix dyrep_rnn_reddit --n_runs 10
 ```
 
 
