@@ -11,7 +11,7 @@ from pathlib import Path
 from evaluation.evaluation import eval_edge_prediction
 from model.tgn import TGN
 from utils.utils import EarlyStopMonitor, RandEdgeSampler, RandEdgeSampler_adversarial, get_neighbor_finder
-from utils.data_processing import get_data, compute_time_statistics
+from utils.tgn_data_processing import get_data, compute_time_statistics
 
 torch.manual_seed(0)
 np.random.seed(0)
