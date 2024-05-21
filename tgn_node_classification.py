@@ -92,12 +92,12 @@ USE_MEMORY = args.use_memory
 MESSAGE_DIM = args.message_dim
 MEMORY_DIM = args.memory_dim
 
-Path("./saved_models/").mkdir(parents=True, exist_ok=True)
-Path("./saved_checkpoints/").mkdir(parents=True, exist_ok=True)
-MODEL_SAVE_PATH = f'./saved_models/{args.prefix}-{args.data}' + '\
+Path("./saved_models/node_classification").mkdir(parents=True, exist_ok=True)
+Path("./saved_checkpoints/node_classification").mkdir(parents=True, exist_ok=True)
+MODEL_SAVE_PATH = f'./saved_models/node_classification/{args.prefix}-{args.data}' + '\
   node-classification.pth'
 get_checkpoint_path = lambda \
-    epoch: f'./saved_checkpoints/{args.prefix}-{args.data}-{epoch}' + '\
+    epoch: f'./saved_checkpoints/node_classification/{args.prefix}-{args.data}-{epoch}' + '\
   node-classification.pth'
 
 ### set up logger
@@ -131,8 +131,8 @@ mean_time_shift_src, std_time_shift_src, mean_time_shift_dst, std_time_shift_dst
   compute_time_statistics(full_data.sources, full_data.destinations, full_data.timestamps)
 
 for i in range(args.n_runs):
-  results_path = "results/{}_node_classification_{}.pkl".format(args.prefix,
-                                                                i) if i > 0 else "results/{}_node_classification.pkl".format(
+  results_path = "results/node_classification/{}_node_classification_{}.pkl".format(args.prefix,
+                                                                i) if i > 0 else "results/node_classification/{}_node_classification.pkl".format(
     args.prefix)
   Path("results/").mkdir(parents=True, exist_ok=True)
 

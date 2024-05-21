@@ -1,19 +1,23 @@
+import numpy as np
+import pandas as pd
 import pickle
 
-# Abre el archivo .pkl en modo lectura binaria
-with open('./data/tgbl-wiki-v2/tgbl-wiki_test_ns_v2.pkl', 'rb') as f:
-    # Carga el contenido del archivo en un objeto Python
-    data = pickle.load(f)
+# Cargar el archivo .npy
+data = np.load('data/tgbl-coin/ml_coin_node_feat.npy')
+with open('data/tgbl-coin/ml_coin_node_dict.pkl', 'rb') as archivo:
+    mi_diccionario_cargado = pickle.load(archivo)
 
-# Verifica si el diccionario no está vacío
-if data:
-    # Obtiene la primera entrada del diccionario
-    primera_clave = next(iter(data))
-    primer_valor = data[primera_clave]
+print(type(dict))
 
-    # Imprime la primera entrada del diccionario
-    print("Primera entrada del diccionario:")
-    print(f"Clave: {primera_clave}")
-    print(f"Valor: {primer_valor}")
-else:
-    print("El diccionario está vacío.")
+# Convertir el array de numpy en un DataFrame de pandas
+df = pd.DataFrame(data)
+
+contador = 0
+for clave, valor in mi_diccionario_cargado.items():
+    print(f'Clave: {clave} -> Valor: {valor}')
+    contador += 1
+    if contador >= 10:
+        break
+
+# Mostrar el DataFrame
+print(df[0:10])
