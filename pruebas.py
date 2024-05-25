@@ -59,7 +59,7 @@ def simplificar_wikipedia(graph_df, edge_feat):
 import pickle
 
 # Ruta al archivo .pkl
-file_path = './results/link_prediction/tgn-agg-RNN_1.pkl'
+file_path = './results/link_prediction/tgn-attn-reddit.pkl'
 
 # Abrir el archivo .pkl
 with open(file_path, 'rb') as file:

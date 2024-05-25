@@ -64,6 +64,7 @@ parser.add_argument('--dyrep', action='store_true',
                     help='Whether to run the dyrep model')
 
 parser.add_argument('--neg_sample', type=str, default='rnd', help='Strategy for the edge negative sampling.')
+parser.add_argument('--work_flow', type=str, default='original', help='Strategy for the edge negative sampling.')
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -89,6 +90,7 @@ USE_MEMORY = args.use_memory
 MESSAGE_DIM = args.message_dim
 MEMORY_DIM = args.memory_dim
 NEG_SAMPLE = args.neg_sample
+WORK_FLOW = args.work_flow
 
 Path("./saved_models/link_prediction").mkdir(parents=True, exist_ok=True)
 Path("./saved_checkpoints/link_prediction").mkdir(parents=True, exist_ok=True)
@@ -236,7 +238,7 @@ for i in range(args.n_runs):
         tgn = tgn.train()
 
         pos_prob, neg_prob = tgn.compute_edge_probabilities(sources_batch, destinations_batch, negatives_batch,
-                                                            timestamps_batch, edge_idxs_batch, NUM_NEIGHBORS)
+                                                            timestamps_batch, edge_idxs_batch, WORK_FLOW, NUM_NEIGHBORS)
         
         loss += criterion(pos_prob.squeeze(), pos_label) + criterion(neg_prob.squeeze(), neg_label)
 
