@@ -19,7 +19,7 @@ np.random.seed(0)
 ### Argument and global variables
 parser = argparse.ArgumentParser('TGN self-supervised training')
 parser.add_argument('-d', '--data', type=str, help='Dataset name (eg. wikipedia-tgn, reddit-tgn, wikipedia-tgb, review-tgb, coin-tgb, comment-tgb, flight-tgb)',
-                    default='wikipedia')
+                    default='wikipedia-tgn')
 parser.add_argument('--bs', type=int, default=200, help='Batch_size')
 parser.add_argument('--prefix', type=str, default='', help='Prefix to name the checkpoints')
 parser.add_argument('--n_degree', type=int, default=10, help='Number of neighbors to sample')
@@ -44,7 +44,7 @@ parser.add_argument('--message_function', type=str, default="identity", choices=
 parser.add_argument('--memory_updater', type=str, default="gru", choices=[
   "gru", "rnn"], help='Type of memory updater')
 parser.add_argument('--aggregator', type=str, default="last", help='Type of message '
-                                                                        'aggregator')
+                                                                        'aggregator (e.g. mean, last or RNN)')
 parser.add_argument('--memory_update_at_end', action='store_true',
                     help='Whether to update memory at the end or at the start of the batch')
 parser.add_argument('--message_dim', type=int, default=100, help='Dimensions of the messages')
@@ -64,6 +64,8 @@ parser.add_argument('--dyrep', action='store_true',
                     help='Whether to run the dyrep model')
 
 parser.add_argument('--neg_sample', type=str, default='rnd', help='Strategy for the edge negative sampling.')
+
+torch.autograd.set_detect_anomaly(True)
 
 try:
   args = parser.parse_args()
@@ -209,7 +211,10 @@ for i in range(args.n_runs):
 
       # Custom loop to allow to perform backpropagation only every a certain number of batches
       for j in range(args.backprop_every):
+        start_batch = time.time()
         batch_idx = k + j
+
+        print("Batch número: " + str(batch_idx))
 
         if batch_idx >= num_batch:
           continue
@@ -229,9 +234,10 @@ for i in range(args.n_runs):
           neg_label = torch.zeros(size, dtype=torch.float, device=device)
 
         tgn = tgn.train()
+
         pos_prob, neg_prob = tgn.compute_edge_probabilities(sources_batch, destinations_batch, negatives_batch,
                                                             timestamps_batch, edge_idxs_batch, NUM_NEIGHBORS)
-
+        
         loss += criterion(pos_prob.squeeze(), pos_label) + criterion(neg_prob.squeeze(), neg_label)
 
       loss /= args.backprop_every
@@ -244,6 +250,9 @@ for i in range(args.n_runs):
       # the start of time
       if USE_MEMORY:
         tgn.memory.detach_memory()
+
+        total_bacth_time = time.time() - start_batch
+        print("Batch Time: " + str(total_bacth_time))
 
     epoch_time = time.time() - start_epoch
     epoch_times.append(epoch_time)

@@ -32,6 +32,8 @@ class Memory(nn.Module):
 
     self.messages = defaultdict(list)
 
+    self.hidden_states = {}
+
   def store_raw_messages(self, nodes, node_id_to_messages):
     for node in nodes:
       self.messages[node].extend(node_id_to_messages[node])

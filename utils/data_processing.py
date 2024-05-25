@@ -95,7 +95,7 @@ def get_data(dataset_name, different_new_nodes_between_val_and_test=False, rando
   # For train we keep edges happening before the validation time which do not involve any new node
   # used for inductiveness
   train_mask = np.logical_and(timestamps <= val_time, observed_edges_mask)
-
+  
   train_data = Data(sources[train_mask], destinations[train_mask], timestamps[train_mask],
                     edge_idxs[train_mask], labels[train_mask])
 

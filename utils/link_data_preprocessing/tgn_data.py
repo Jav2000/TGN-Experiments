@@ -59,8 +59,8 @@ def reindex(df, bipartite=True):
 def run(data_name, bipartite=True):
     Path("data/").mkdir(parents=True, exist_ok=True)
     PATH = './data/{}/{}.csv'.format(data_name, data_name.split('-')[0])
-    OUT_DF = './data/{}/ml_{}.csv'.format(data_name, data_name.split('-')[0])
-    OUT_FEAT = './data/{}/ml_{}.npy'.format(data_name, data_name.split('-')[0])
+    OUT_DF = './data/{}/ml_{}_df.csv'.format(data_name, data_name.split('-')[0])
+    OUT_FEAT = './data/{}/ml_{}_edge_feat.npy'.format(data_name, data_name.split('-')[0])
     df, feat = preprocess(PATH)
     new_df = reindex(df, bipartite)
 

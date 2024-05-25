@@ -43,7 +43,7 @@ def preprocess_review_coin(data_name):
   '''
   [ts, u, i, weight]
   '''
-  u_list, i_list, ts_list, idx_list, feat_list = [], [], [], [], []
+  u_list, i_list, ts_list, label_list, idx_list, feat_list = [], [], [], [], [], []
   
   node_dict = {}
   nodes_id = 0
@@ -71,6 +71,7 @@ def preprocess_review_coin(data_name):
       u_list.append(node_dict[u])
       i_list.append(node_dict[i])
       ts_list.append(ts)
+      label_list.append(0)
       idx_list.append(idx)
 
       feat_list.append(np.zeros(1))
@@ -79,6 +80,7 @@ def preprocess_review_coin(data_name):
   return pd.DataFrame({"u": u_list,
                        "i": i_list,
                        "ts": ts_list,
+                       'label': label_list,
                        "idx": idx_list}), np.array(feat_list), node_dict
 
 
@@ -86,7 +88,7 @@ def preprocess_comment(data_name):
   '''
   [ts, u, i, subrredit, num_words, score]
   '''
-  u_list, i_list, ts_list, idx_list, feat_list = [], [], [], [], []
+  u_list, i_list, ts_list, label_list, idx_list, feat_list = [], [], [], [], [], []
   
   # Del código TGB
   max_words = 500
@@ -114,6 +116,7 @@ def preprocess_comment(data_name):
       u_list.append(node_dict[u])
       i_list.append(node_dict[i])
       ts_list.append(ts)
+      label_list.append(0)
       idx_list.append(idx)
 
       feat_list.append(np.array([(float(e[4])/max_words)]))
@@ -122,13 +125,14 @@ def preprocess_comment(data_name):
   return pd.DataFrame({"u": u_list,
                        "i": i_list,
                        "ts": ts_list,
+                       "label": label_list,
                        "idx": idx_list}), np.array(feat_list), node_dict
   
 def preprocess_flight(data_name):
   '''
   [ts, u, i, callsing, typecode]
   '''
-  u_list, i_list, ts_list, idx_list, feat_list = [], [], [], [], []
+  u_list, i_list, ts_list, label_list, idx_list, feat_list = [], [], [], [], [], []
 
   node_dict = {}
   nodes_id = 0
@@ -153,6 +157,7 @@ def preprocess_flight(data_name):
       u_list.append(node_dict[u])
       i_list.append(node_dict[i])
       ts_list.append(ts)
+      label_list.append(0)
       idx_list.append(idx)
 
       # Fix size to 8 with !
@@ -176,6 +181,7 @@ def preprocess_flight(data_name):
   return pd.DataFrame({"u": u_list,
                        "i": i_list,
                        "ts": ts_list,
+                       "label": label_list,
                        "idx": idx_list}), np.array(feat_list), node_dict
 
 def reindex(df, node_dict, bipartite=True):
@@ -327,7 +333,7 @@ def run(data_name, bipartite=True):
     np.save(OUT_EDGE_FEAT, feat)
 
     # Se deciden guardar únicamente las características de los nodos del conjunto "flight" ya que no son 0.
-    if data_name == "flight":
+    if data_name == "flight-tgb":
       # Se calculan las características de los nodos de "flight"
       node_feat = process_flight_node_feat("./data/flight-tgb/airport_node_feat.csv", node_dict)
       np.save(OUT_NODE_FEAT, node_feat)
@@ -338,7 +344,7 @@ def run(data_name, bipartite=True):
 
 
 parser = argparse.ArgumentParser('Interface for TGB data preprocessing')
-parser.add_argument('--data_name', type=str, help='Dataset name (eg. wikipedia, review, coin, comment, flight)',
+parser.add_argument('--data_name', type=str, help='Dataset name (eg. wikipedia-tgb, review-tgb, coin-tgb, comment-tgb, flight-tgb)',
                     default='wikipedia')
 parser.add_argument('--bipartite', action='store_true', help='Whether the graph is bipartite')
 
