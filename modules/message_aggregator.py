@@ -97,23 +97,20 @@ class RNNMessageAggregator(MessageAggregator):
     to_update_node_ids = []
 
     for node_id in unique_node_ids:
+      count = 0
       if len(messages[node_id]) > 0:
         to_update_node_ids.append(node_id)
 
-        if node_id not in self.memory.hidden_states:
-          self.memory.hidden_states[node_id] = torch.zeros(1, self.message_dimension, device=self.device)
-
-        hidden_state = self.memory.hidden_states[node_id]
+        if count == 0:
+          hidden_state = torch.zeros(self.message_dimension)
 
         for message in messages[node_id]:
-          hidden_state = self.message_aggregator(message[0].unsqueeze(0), hidden_state)
-        
-        self.memory.hidden_states[node_id] = hidden_state.detach()
+          hidden_state = self.message_aggregator(message[0].squeeze(0), hidden_state)
 
         unique_messages.append(hidden_state)
         unique_timestamps.append(messages[node_id][-1][1])
 
-    unique_messages = torch.cat(unique_messages, dim=0) if len(to_update_node_ids) > 0 else []
+    unique_messages = torch.stack(unique_messages) if len(to_update_node_ids) > 0 else []
     unique_timestamps = torch.stack(unique_timestamps) if len(to_update_node_ids) > 0 else []
 
     return to_update_node_ids, unique_messages, unique_timestamps

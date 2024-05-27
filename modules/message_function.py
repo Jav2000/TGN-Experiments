@@ -14,10 +14,20 @@ class MLPMessageFunction(MessageFunction):
   def __init__(self, raw_message_dimension, message_dimension):
     super(MLPMessageFunction, self).__init__()
 
+
+
     self.mlp = self.layers = nn.Sequential(
       nn.Linear(raw_message_dimension, raw_message_dimension // 2),
       nn.ReLU(),
-      nn.Linear(raw_message_dimension // 2, message_dimension),
+      nn.BatchNorm1d(raw_message_dimension // 2),
+      nn.Dropout(0.2),
+
+      nn.Linear(raw_message_dimension // 2, raw_message_dimension // 4),
+      nn.ReLU(),
+      nn.BatchNorm1d(raw_message_dimension // 4),
+      nn.Dropout(0.2),
+
+      nn.Linear(raw_message_dimension // 4, message_dimension),
     )
 
   def compute_message(self, raw_messages):

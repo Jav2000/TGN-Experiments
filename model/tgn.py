@@ -99,7 +99,7 @@ class TGN(torch.nn.Module):
                                      1)
 
   def compute_temporal_embeddings(self, source_nodes, destination_nodes, negative_nodes, edge_times,
-                                  edge_idxs, work_flow, n_neighbors=20):
+                                  edge_idxs, n_neighbors=20):
     """
     Compute temporal embeddings for sources, destinations, and negatively sampled destinations.
 
@@ -126,7 +126,6 @@ class TGN(torch.nn.Module):
           # Update memory for all nodes with messages stored in previous batches
           memory, last_update = self.get_updated_memory(list(range(self.n_nodes)),
                                                         self.memory.messages)
-          
         else:
           memory = self.memory.get_memory(list(range(self.n_nodes)))
           last_update = self.memory.last_update
@@ -193,60 +192,10 @@ class TGN(torch.nn.Module):
           negative_node_embedding = memory[negative_nodes]
 
       return source_node_embedding, destination_node_embedding, negative_node_embedding
-    
-    elif work_flow == 'new':
-      # Actualizamos la memoria de los positivos del batch anterior
-      memory, last_update = self.update_memory_new(positives, self.memory.messages)
-
-      # Remove messages for the positives since we have already updated the memory using them
-      self.memory.clear_messages(positives)
-
-      ### Compute differences between the time the memory of a node was last updated,
-      ### and the time for which we want to compute the embedding of a node
-      source_time_diffs = torch.LongTensor(edge_times).to(self.device) - last_update[source_nodes].long()
-      source_time_diffs = (source_time_diffs - self.mean_time_shift_src) / self.std_time_shift_src
-      destination_time_diffs = torch.LongTensor(edge_times).to(self.device) - last_update[destination_nodes].long()
-      destination_time_diffs = (destination_time_diffs - self.mean_time_shift_dst) / self.std_time_shift_dst
-      negative_time_diffs = torch.LongTensor(edge_times).to(self.device) - last_update[negative_nodes].long()
-      negative_time_diffs = (negative_time_diffs - self.mean_time_shift_dst) / self.std_time_shift_dst
-
-      time_diffs = torch.cat([source_time_diffs, destination_time_diffs, negative_time_diffs],dim=0)
-
-      # Compute the embeddings using the embedding module
-      node_embedding = self.embedding_module.compute_embedding(memory=memory,
-                                                              source_nodes=nodes,
-                                                              timestamps=timestamps,
-                                                              n_layers=self.n_layers,
-                                                              n_neighbors=n_neighbors,
-                                                              time_diffs=time_diffs)
-
-      source_node_embedding = node_embedding[:n_samples]
-      destination_node_embedding = node_embedding[n_samples: 2 * n_samples]
-      negative_node_embedding = node_embedding[2 * n_samples:]
-
-      unique_sources, source_id_to_messages = self.get_raw_messages(source_nodes,
-                                                                    source_node_embedding,
-                                                                    destination_nodes,
-                                                                    destination_node_embedding,
-                                                                    edge_times, edge_idxs)
-      unique_destinations, destination_id_to_messages = self.get_raw_messages(destination_nodes,
-                                                                              destination_node_embedding,
-                                                                              source_nodes,
-                                                                              source_node_embedding,
-                                                                              edge_times, edge_idxs)
-      
-      self.memory.store_raw_messages(unique_sources, source_id_to_messages)
-      self.memory.store_raw_messages(unique_destinations, destination_id_to_messages)
-
-      return source_node_embedding, destination_node_embedding, negative_node_embedding
-    
-    else:
-      print("WorkFlow no implementado")
-      return None
       
 
   def compute_edge_probabilities(self, source_nodes, destination_nodes, negative_nodes, edge_times,
-                                 edge_idxs, work_flow, n_neighbors=20):
+                                 edge_idxs, n_neighbors=20):
     """
     Compute probabilities for edges between sources and destination and between sources and
     negatives by first computing temporal embeddings using the TGN encoder and then feeding them
@@ -261,7 +210,7 @@ class TGN(torch.nn.Module):
     """
     n_samples = len(source_nodes)
     source_node_embedding, destination_node_embedding, negative_node_embedding = self.compute_temporal_embeddings(
-      source_nodes, destination_nodes, negative_nodes, edge_times, edge_idxs, work_flow, n_neighbors)
+      source_nodes, destination_nodes, negative_nodes, edge_times, edge_idxs, n_neighbors)
 
     score = self.affinity_score(torch.cat([source_node_embedding, source_node_embedding], dim=0),
                                 torch.cat([destination_node_embedding,
@@ -304,7 +253,6 @@ class TGN(torch.nn.Module):
     updated_memory, updated_last_update = self.memory_updater.get_updated_memory(unique_nodes,
                                                                                  unique_messages,
                                                                                  timestamps=unique_timestamps)
-
     return updated_memory, updated_last_update
   
   def update_memory_new(self, nodes, messages):
@@ -314,6 +262,7 @@ class TGN(torch.nn.Module):
     3. Actualiza la memoria con los mensajes agregados y calculados.
     4. Devuelve la memoria actualizada y los tiempos de la última actualización.
     """
+
 
     # Compute messages from raw messages
     if len(messages) > 0:
@@ -345,12 +294,16 @@ class TGN(torch.nn.Module):
 
     unique_nodes, unique_messages, unique_timestamps = self.message_aggregator.aggregate(list(messages.keys()), messages)
 
-    self.memory_updater.update_memory(unique_nodes, unique_messages,
-                                      timestamps=unique_timestamps)
-    
-    updated_memory, updated_last_update = self.memory_updater.get_updated_memory(unique_nodes, unique_messages,
-                                                                                 timestamps=unique_timestamps)
-    
+    if len(unique_messages) > 0:
+      print(unique_messages.shape)
+
+    if len(unique_messages) > 0:
+      updated_memory, updated_last_update = self.memory_updater.update_memory_new(unique_nodes, unique_messages,
+                                                                                  timestamps=unique_timestamps)
+    else:
+      updated_memory, updated_last_update = self.memory_updater.get_updated_memory(unique_nodes, unique_messages,
+                                                                                  timestamps=unique_timestamps)
+
     return updated_memory, updated_last_update
 
   def get_raw_messages(self, source_nodes, source_node_embedding, destination_nodes,

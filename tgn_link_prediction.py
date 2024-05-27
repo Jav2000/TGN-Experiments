@@ -64,7 +64,6 @@ parser.add_argument('--dyrep', action='store_true',
                     help='Whether to run the dyrep model')
 
 parser.add_argument('--neg_sample', type=str, default='rnd', help='Strategy for the edge negative sampling.')
-parser.add_argument('--work_flow', type=str, default='original', help='Strategy for the edge negative sampling.')
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -90,7 +89,6 @@ USE_MEMORY = args.use_memory
 MESSAGE_DIM = args.message_dim
 MEMORY_DIM = args.memory_dim
 NEG_SAMPLE = args.neg_sample
-WORK_FLOW = args.work_flow
 
 Path("./saved_models/link_prediction").mkdir(parents=True, exist_ok=True)
 Path("./saved_checkpoints/link_prediction").mkdir(parents=True, exist_ok=True)
@@ -213,10 +211,7 @@ for i in range(args.n_runs):
 
       # Custom loop to allow to perform backpropagation only every a certain number of batches
       for j in range(args.backprop_every):
-        start_batch = time.time()
         batch_idx = k + j
-
-        print("Batch número: " + str(batch_idx))
 
         if batch_idx >= num_batch:
           continue
@@ -238,7 +233,7 @@ for i in range(args.n_runs):
         tgn = tgn.train()
 
         pos_prob, neg_prob = tgn.compute_edge_probabilities(sources_batch, destinations_batch, negatives_batch,
-                                                            timestamps_batch, edge_idxs_batch, WORK_FLOW, NUM_NEIGHBORS)
+                                                            timestamps_batch, edge_idxs_batch, NUM_NEIGHBORS)
         
         loss += criterion(pos_prob.squeeze(), pos_label) + criterion(neg_prob.squeeze(), neg_label)
 
@@ -253,9 +248,6 @@ for i in range(args.n_runs):
       if USE_MEMORY:
         tgn.memory.detach_memory()
 
-        total_bacth_time = time.time() - start_batch
-        print("Batch Time: " + str(total_bacth_time))
-
     epoch_time = time.time() - start_epoch
     epoch_times.append(epoch_time)
 
@@ -269,9 +261,9 @@ for i in range(args.n_runs):
       train_memory_backup = tgn.memory.backup_memory()
 
     val_ap, val_auc = eval_edge_prediction(model=tgn,
-                                                            negative_edge_sampler=val_rand_sampler,
-                                                            data=val_data,
-                                                            n_neighbors=NUM_NEIGHBORS)
+                                           negative_edge_sampler=val_rand_sampler,
+                                           data=val_data,
+                                           n_neighbors=NUM_NEIGHBORS)
     if USE_MEMORY:
       val_memory_backup = tgn.memory.backup_memory()
       # Restore memory we had at the end of training to be used when validating on new nodes.
@@ -281,9 +273,9 @@ for i in range(args.n_runs):
 
     # Validate on unseen nodes
     nn_val_ap, nn_val_auc = eval_edge_prediction(model=tgn,
-                                                                        negative_edge_sampler=val_rand_sampler,
-                                                                        data=new_node_val_data,
-                                                                        n_neighbors=NUM_NEIGHBORS)
+                                                 negative_edge_sampler=val_rand_sampler,
+                                                 data=new_node_val_data,
+                                                 n_neighbors=NUM_NEIGHBORS)
 
     if USE_MEMORY:
       # Restore memory we had at the end of validation
@@ -333,18 +325,18 @@ for i in range(args.n_runs):
   ### Test
   tgn.embedding_module.neighbor_finder = full_ngh_finder
   test_ap, test_auc = eval_edge_prediction(model=tgn,
-                                                              negative_edge_sampler=test_rand_sampler,
-                                                              data=test_data,
-                                                              n_neighbors=NUM_NEIGHBORS)
+                                           negative_edge_sampler=test_rand_sampler,
+                                           data=test_data,
+                                           n_neighbors=NUM_NEIGHBORS)
 
   if USE_MEMORY:
     tgn.memory.restore_memory(val_memory_backup)
 
   # Test on unseen nodes
   nn_test_ap, nn_test_auc = eval_edge_prediction(model=tgn,
-                                                                          negative_edge_sampler=nn_test_rand_sampler,
-                                                                          data=new_node_test_data,
-                                                                          n_neighbors=NUM_NEIGHBORS)
+                                                 negative_edge_sampler=nn_test_rand_sampler,
+                                                 data=new_node_test_data,
+                                                 n_neighbors=NUM_NEIGHBORS)
 
   logger.info(
     'Test statistics: Old nodes -- auc: {}, ap: {}'.format(test_auc, test_ap))
