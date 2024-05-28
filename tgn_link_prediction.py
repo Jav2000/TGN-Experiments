@@ -44,7 +44,7 @@ parser.add_argument('--message_function', type=str, default="identity", choices=
 parser.add_argument('--memory_updater', type=str, default="gru", choices=[
   "gru", "rnn"], help='Type of memory updater')
 parser.add_argument('--aggregator', type=str, default="last", help='Type of message '
-                                                                        'aggregator (e.g. mean, last or RNN)')
+                                                                        'aggregator (e.g. mean, last, rnn or gru)')
 parser.add_argument('--memory_update_at_end', action='store_true',
                     help='Whether to update memory at the end or at the start of the batch')
 parser.add_argument('--message_dim', type=int, default=100, help='Dimensions of the messages')
@@ -62,6 +62,8 @@ parser.add_argument('--use_source_embedding_in_message', action='store_true',
                     help='Whether to use the embedding of the source node as part of the message')
 parser.add_argument('--dyrep', action='store_true',
                     help='Whether to run the dyrep model')
+parser.add_argument('--feature_embedding_type', type=str, default='identity', help='Type of feature embedding (e.g. identity or mlp)')
+parser.add_argument('--feature_dim', type=int, default=50, help='Dimensions of the feature embedding')
 
 parser.add_argument('--neg_sample', type=str, default='rnd', help='Strategy for the edge negative sampling.')
 
@@ -89,6 +91,8 @@ USE_MEMORY = args.use_memory
 MESSAGE_DIM = args.message_dim
 MEMORY_DIM = args.memory_dim
 NEG_SAMPLE = args.neg_sample
+FEATURE_TYPE = args.feature_embedding_type
+FEATURE_DIM = args.feature_dim
 
 Path("./saved_models/link_prediction").mkdir(parents=True, exist_ok=True)
 Path("./saved_checkpoints/link_prediction").mkdir(parents=True, exist_ok=True)

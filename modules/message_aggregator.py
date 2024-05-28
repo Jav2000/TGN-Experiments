@@ -82,12 +82,11 @@ class MeanMessageAggregator(MessageAggregator):
     return to_update_node_ids, unique_messages, unique_timestamps
 
 class RNNMessageAggregator(MessageAggregator):
-  def __init__(self, device, message_dimension, memory):
+  def __init__(self, device, raw_message_dimension):
     super(RNNMessageAggregator, self).__init__(device)
 
-    self.memory = memory
-    self.message_dimension = message_dimension
-    self.message_aggregator = nn.RNNCell(input_size=message_dimension, hidden_size=message_dimension)
+    self.raw_message_dimension = raw_message_dimension
+    self.message_aggregator = nn.RNNCell(input_size=raw_message_dimension, hidden_size=raw_message_dimension)
   
   def aggregate(self, node_ids, messages):
     unique_node_ids = np.unique(node_ids)
@@ -97,12 +96,11 @@ class RNNMessageAggregator(MessageAggregator):
     to_update_node_ids = []
 
     for node_id in unique_node_ids:
-      count = 0
       if len(messages[node_id]) > 0:
         to_update_node_ids.append(node_id)
-
-        if count == 0:
-          hidden_state = torch.zeros(self.message_dimension)
+        
+        hidden_state = nn.Parameter(torch.zeros(self.raw_message_dimension).to(self.device),
+                               requires_grad=False)
 
         for message in messages[node_id]:
           hidden_state = self.message_aggregator(message[0].squeeze(0), hidden_state)
@@ -114,13 +112,79 @@ class RNNMessageAggregator(MessageAggregator):
     unique_timestamps = torch.stack(unique_timestamps) if len(to_update_node_ids) > 0 else []
 
     return to_update_node_ids, unique_messages, unique_timestamps
+  
+class GRUMessageAggregator(MessageAggregator):
+  def __init__(self, device, raw_message_dimension):
+    super(GRUMessageAggregator, self).__init__(device)
 
-def get_message_aggregator(aggregator_type, device, message_dimension=None, memory=None):
+    self.raw_message_dimension = raw_message_dimension
+    self.message_aggregator = nn.GRUCell(input_size=raw_message_dimension, hidden_size=raw_message_dimension)
+  
+  def aggregate(self, node_ids, messages):
+    unique_node_ids = np.unique(node_ids)
+    unique_messages = []
+    unique_timestamps = []
+
+    to_update_node_ids = []
+
+    for node_id in unique_node_ids:
+      if len(messages[node_id]) > 0:
+        to_update_node_ids.append(node_id)
+        
+        hidden_state = nn.Parameter(torch.zeros(self.raw_message_dimension).to(self.device),
+                               requires_grad=False)
+
+        for message in messages[node_id]:
+          hidden_state = self.message_aggregator(message[0].squeeze(0), hidden_state)
+
+        unique_messages.append(hidden_state.detach())
+        unique_timestamps.append(messages[node_id][-1][1])
+
+    unique_messages = torch.stack(unique_messages) if len(to_update_node_ids) > 0 else []
+    unique_timestamps = torch.stack(unique_timestamps) if len(to_update_node_ids) > 0 else []
+
+    return to_update_node_ids, unique_messages, unique_timestamps
+  
+class GLUMessageAggregator(MessageAggregator):
+  def __init__(self, device, raw_message_dimension):
+    super(GRUMessageAggregator, self).__init__(device)
+
+    self.raw_message_dimension = raw_message_dimension
+    self.message_aggregator = nn.GRUCell(input_size=raw_message_dimension, hidden_size=raw_message_dimension)
+  
+  def aggregate(self, node_ids, messages):
+    unique_node_ids = np.unique(node_ids)
+    unique_messages = []
+    unique_timestamps = []
+
+    to_update_node_ids = []
+
+    for node_id in unique_node_ids:
+      if len(messages[node_id]) > 0:
+        to_update_node_ids.append(node_id)
+        
+        hidden_state = nn.Parameter(torch.zeros(self.raw_message_dimension).to(self.device),
+                               requires_grad=False)
+
+        for message in messages[node_id]:
+          hidden_state = self.message_aggregator(message[0].squeeze(0), hidden_state)
+
+        unique_messages.append(hidden_state.detach())
+        unique_timestamps.append(messages[node_id][-1][1])
+
+    unique_messages = torch.stack(unique_messages) if len(to_update_node_ids) > 0 else []
+    unique_timestamps = torch.stack(unique_timestamps) if len(to_update_node_ids) > 0 else []
+
+    return to_update_node_ids, unique_messages, unique_timestamps
+
+def get_message_aggregator(aggregator_type, device, raw_message_dimension=None):
   if aggregator_type == "last":
     return LastMessageAggregator(device=device)
   elif aggregator_type == "mean":
     return MeanMessageAggregator(device=device)
-  elif aggregator_type == "RNN":
-    return RNNMessageAggregator(device=device, message_dimension=message_dimension, memory=memory)
+  elif aggregator_type == "rnn":
+    return RNNMessageAggregator(device=device, raw_message_dimension=raw_message_dimension)
+  elif aggregator_type == "gru":
+    return GRUMessageAggregator(device=device, raw_message_dimension=raw_message_dimension)
   else:
     raise ValueError("Message aggregator {} not implemented".format(aggregator_type))

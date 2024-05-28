@@ -1,15 +1,15 @@
 import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
+import os
 
 def load_results(file_path):
     with open(file_path, "rb") as file:
         return pickle.load(file)
-
-def plot_results(root_path, file_paths):
+    
+def plot_results(path, results):
     # Crear una figura con múltiples subgráficas
-    fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+    _, axs = plt.subplots(2, 2, figsize=(12, 10))
 
     # Gráfica 1: val_aps vs Epoch
     axs[0, 0].set_title('APs Validación por Época')
@@ -31,41 +31,47 @@ def plot_results(root_path, file_paths):
     axs[1, 1].set_xlabel('Época')
     axs[1, 1].set_ylabel('Tiempo')
 
-    for i, file_path in enumerate(file_paths):
-        # Cargar los resultados
-        results = load_results(file_path)
-
+    for name, result in results:
         # Extraer los datos
-        val_aps = results["val_aps"]
-        new_nodes_val_aps = results["new_nodes_val_aps"]
-        train_losses = results["train_losses"]
-        epoch_times = results["epoch_times"]
-    
+        val_aps = result["val_aps"]
+        new_nodes_val_aps = result["new_nodes_val_aps"]
+        train_losses = result["train_losses"]
+        epoch_times = result["epoch_times"]
+            
         # Gráfica 1: val_aps vs Epoch
-        axs[0, 0].plot(val_aps, label="APs Validación Ejecución - {}".format(i))
+        axs[0, 0].plot(val_aps, label="{}".format(name))
         axs[0, 0].legend()
-    
+            
         # Gráfica 2: new_nodes_val_aps vs Epoch
-        axs[0, 1].plot(new_nodes_val_aps, label="APs Validación nuevos nodos Ejecución - {}".format(i))
+        axs[0, 1].plot(new_nodes_val_aps, label="{}".format(name))
         axs[0, 1].legend()
-        
+                
         # Gráfica 3: train_losses vs Epoch
-        axs[1, 0].plot(train_losses, label="Pérdida de entrenamiento Ejecución - {}".format(i))
+        axs[1, 0].plot(train_losses, label="{}".format(name))
         axs[1, 0].legend()
-        
+                
         # Gráfica 4: epoch_times vs Epoch
-        axs[1, 1].plot(epoch_times, label="Tiempo por Época Ejecución - {}".format(i))
+        axs[1, 1].plot(epoch_times, label="{}".format(name))
         axs[1, 1].legend()
 
     # Ajustar el layout
     plt.tight_layout()
 
     # Guardar gráfica
-    plt.savefig(root_path + "Resultados Wikipedia.png", dpi=300)
-    
-    # Mostrar la gráfica
-    plt.show()
+    plt.savefig(path + "Resultados.png", dpi=300)
+        
+def plot_model_results(root_path, file_paths):
+    for model in list(file_paths.keys()):
+        if len(file_paths[model]) > 0:
+            resultados = []
+            for file_path in file_paths[model]:
+                # Cargar los resultados
+                results = load_results(file_path)
 
+                resultados.append((model, results))
+
+                path = root_path + model + '/'
+                plot_results(path, resultados)
 
 def evolucion_nodos(graph_df):
     # Inicializar sets para guardar nodos únicos que ya hemos visto
@@ -118,7 +124,6 @@ def evolucion_mensajes(graph_df):
 
     return count_u_per_batch, count_i_per_batch, max_u_per_batch, max_i_per_batch
 
-
 def grafica_evolucion_nodos(evol_df):
     # Crear la figura y los ejes
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -165,24 +170,52 @@ def grafica_evolucion_mensajes(max_u_per_batch, max_i_per_batch):
     plt.tight_layout()  # Ajusta automáticamente el diseño de las figuras
     plt.show()
 
-file_paths = []
-root_path = "./results/link_prediction/reddit-tgn/"
+def plot_best_results_ap(root_path, file_paths):
+    mejores_resultados = []
+    for model in list(file_paths.keys()):
+        if len(file_paths[model]) > 0:
+            mejor_val_aps = -float('inf')
+            mejor_resultado = None
 
-for i in range(10):
-    if i == 0:
-        file_paths.append(root_path + "tgn-attn-reddit-tgn.pkl")
-    else:
-        file_paths.append(root_path + "tgn-attn-reddit-tgn_" + str(i) + ".pkl")
+            for file_path in file_paths[model]:
+                # Cargar los resultados
+                results = load_results(file_path)
 
-plot_results(root_path, file_paths)
+                # Extraer los datos
+                val_aps = results["val_aps"]
 
-graph_df = pd.read_csv('./data/wikipedia-tgn/ml_wikipedia_df.csv')
+                # Obtener el valor máximo de val_aps
+                max_val_aps = max(val_aps)
 
-graph_df['batch'] = np.arange(len(graph_df)) // 200
+                if max_val_aps > mejor_val_aps:
+                    mejor_val_aps = max_val_aps
+                    mejor_resultado = results
+            
+            mejores_resultados.append((model, mejor_resultado))
 
-evol_nodos = evolucion_nodos(graph_df)
+    print(mejores_resultados)
+    
+    plot_results(root_path, mejores_resultados)
 
-count_u_per_batch, count_i_per_batch, max_u_per_batch, max_i_per_batch = evolucion_mensajes(graph_df)
+file_paths = {}
+root_path = "./results/link_prediction/wikipedia-simplificada/"
 
-mean_u = max_u_per_batch['count_u'].mean()
-mean_i = max_i_per_batch['count_i'].mean()
+folders = os.listdir(root_path)
+
+for folder in folders:
+    if "tgn" in folder:
+        file_paths[folder] = []
+
+        dir_path = root_path + folder + '/'
+        runs = os.listdir(dir_path)
+
+        for run in runs:
+            if "tgn" in run:
+                run_path = dir_path + run
+                file_paths[folder].append(run_path)
+
+plot_model_results(root_path, file_paths)
+
+plot_best_results_ap(root_path, file_paths)
+
+

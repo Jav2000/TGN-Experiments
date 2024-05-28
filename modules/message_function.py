@@ -1,20 +1,15 @@
 from torch import nn
 
-
 class MessageFunction(nn.Module):
   """
   Module which computes the message for a given interaction.
   """
-
   def compute_message(self, raw_messages):
     return None
-
 
 class MLPMessageFunction(MessageFunction):
   def __init__(self, raw_message_dimension, message_dimension):
     super(MLPMessageFunction, self).__init__()
-
-
 
     self.mlp = self.layers = nn.Sequential(
       nn.Linear(raw_message_dimension, raw_message_dimension // 2),
@@ -35,13 +30,10 @@ class MLPMessageFunction(MessageFunction):
 
     return messages
 
-
 class IdentityMessageFunction(MessageFunction):
-
   def compute_message(self, raw_messages):
 
     return raw_messages
-
 
 def get_message_function(module_type, raw_message_dimension, message_dimension):
   if module_type == "mlp":

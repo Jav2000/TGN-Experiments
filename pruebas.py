@@ -56,14 +56,14 @@ def simplificar_wikipedia(graph_df, edge_feat):
 # df_reindexed.to_csv('./data/wikipedia-simplificada/ml_wikipedia_simplificada_df.csv', index=False)
 # np.save('./data/wikipedia-simplificada/ml_wikipedia_simplificada_edge_feat.npy', new_edge_feat)
 
-import pickle
+# import pickle
 
-# Ruta al archivo .pkl
-file_path = './results/link_prediction/wikipedia-simplificada/Original WorkFlow/tgn-attn/tgn-attn.pkl'
+# # Ruta al archivo .pkl
+# file_path = './results/link_prediction/wikipedia-simplificada/Original WorkFlow/tgn-attn/tgn-attn.pkl'
 
-# Abrir el archivo .pkl
-with open(file_path, 'rb') as file:
-    data = pickle.load(file)
+# # Abrir el archivo .pkl
+# with open(file_path, 'rb') as file:
+#     data = pickle.load(file)
 
-# Mostrar el contenido del archivo
-print(data)
+# # Mostrar el contenido del archivo
+# print(data)
